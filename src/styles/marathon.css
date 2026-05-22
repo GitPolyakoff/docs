@@ -99,8 +99,9 @@
 	color: var(--sl-color-accent-high);
 }
 
-/* Logo sizing — keep it from dominating the header */
+/* Logo sizing — standalone wordmark, give it room */
 .site-title img {
-	height: 1.75rem;
+	height: 2.25rem;
 	width: auto;
+	max-width: none;
 }

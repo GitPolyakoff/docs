@@ -8,8 +8,9 @@ export default defineConfig({
 		starlight({
 			title: 'TrucklineMP',
 			logo: {
-				src: './src/assets/truckline_no_shadow.svg',
+				src: './src/assets/truckline_large_no_shadow.svg',
 				alt: 'TrucklineMP',
+				replacesTitle: true,
 			},
 			favicon: '/truckline_no_shadow.svg',
 			customCss: [
