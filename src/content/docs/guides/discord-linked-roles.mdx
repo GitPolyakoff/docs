@@ -1,0 +1,180 @@
+---
+title: Discord Linked Roles
+description: Set up TrucklineMP Linked Roles on your Discord server so members can verify their account and automatically receive roles.
+---
+
+# Discord Linked Roles
+
+Discord **Linked Roles** let server admins assign roles automatically when a member connects their TrucklineMP account through Discord. Members sign in on TrucklineMP once; Discord keeps their role connection up to date.
+
+This works on any Discord server — not only VTC servers. If you run a VTC community, pair this guide with [VTC Discord Verification](/guides/vtc-discord-verification/) to also show your server on your VTC profile.
+
+---
+
+## What You Get
+
+- **Automatic verification** — Members prove they have a TrucklineMP account without manual role assignment
+- **Staff detection** — Create a role that only TrucklineMP staff receive
+- **Bot commands** — Linked members can use `/profile`; verified VTC servers can use `/vtc`
+- **Always in sync** — When a member's TrucklineMP status changes, their Linked Role connection updates on the next sync
+
+---
+
+## Requirements
+
+### Server admins
+
+- **Manage Server** permission in Discord
+- The [TrucklineMP bot](https://discord.com/discovery/applications/1467506804727746854) added to your server (recommended for slash commands and VTC verification)
+
+### Members
+
+- A TrucklineMP account at [trucklinemp.com](https://trucklinemp.com)
+- The Discord account they want to link must match the one they use in the connection flow
+
+---
+
+## Step 1: Add the TrucklineMP Bot
+
+1. Open the TrucklineMP bot on Discord: [TrucklineMP on Discord](https://discord.com/discovery/applications/1467506804727746854)
+2. Click **Add to Server** (or use the invite link from your VTC settings if you are verifying a VTC server)
+3. Select your server and approve the requested permissions
+4. Complete the installation
+
+**VTC servers:** After adding the bot, follow [VTC Discord Verification](/guides/vtc-discord-verification/) and run `/verify-server` with your token so `/vtc` works and your server appears on your VTC profile.
+
+**Recommended bot permissions:**
+
+- Read Messages / View Channels
+- Send Messages
+- Use Slash Commands
+
+---
+
+## Step 2: Create Linked Roles (Server Admins)
+
+1. Open your Discord server
+2. Go to **Server Settings**
+3. Select **Linked Roles** in the sidebar
+4. Click **Create Linked Role** (or **Connections** → **TrucklineMP** depending on your Discord client)
+5. Choose the **TrucklineMP** application
+6. Pick an existing role or create a new one to assign
+7. Add a requirement using one of the TrucklineMP fields below
+8. Save the Linked Role
+
+Repeat for each role you want to gate (for example, a general **Member** role and a separate **Staff** role).
+
+### Available TrucklineMP requirements
+
+| Requirement | What it checks | Typical use |
+|-------------|----------------|-------------|
+| **Account linked** | Member has connected their TrucklineMP account | Verified member, general access, recruitment channels |
+| **TrucklineMP staff** | Member is TrucklineMP platform staff | Staff-only channels, moderation areas |
+
+When configuring the requirement in Discord, set **Account linked** to **Yes** (or equivalent) for verified members. For staff-only roles, add **TrucklineMP staff** set to **Yes**.
+
+### Example setups
+
+**Verified member role**
+
+- Role: `@Member` (or your community's verified role)
+- Requirement: **Account linked** = Yes
+
+**Platform staff role**
+
+- Role: `@TrucklineMP Staff`
+- Requirement: **TrucklineMP staff** = Yes
+
+You can combine both requirements on a single role if you only want staff who have also linked their account (staff always have a linked account in practice).
+
+---
+
+## Step 3: Members Connect Their Account
+
+Each member completes this once per Discord account:
+
+1. Open **User Settings** in Discord (click the gear next to your username)
+2. Go to **Linked Roles** (under **Connections** on some clients)
+3. Find **TrucklineMP** and click **Connect**
+4. Sign in to TrucklineMP if prompted
+5. Approve the connection
+6. Discord returns you to the app; eligible Linked Roles are applied automatically
+
+Members do **not** need to use **Settings → Connections** on TrucklineMP for Linked Roles. That page is for account recovery and profile linking — Linked Roles use Discord's dedicated connection flow.
+
+---
+
+## Bot Commands
+
+After the bot is in your server and members have linked:
+
+| Command | Who can use it | What it does |
+|---------|----------------|--------------|
+| `/profile [user]` | Everyone | Shows a linked member's TrucklineMP profile (name, handle, member since, Steam status) |
+| `/vtc` | Everyone | Shows the VTC linked to this server (requires `/verify-server` first) |
+| `/verify-server` | Administrators | Links the server to your VTC using a token from TrucklineMP |
+| `/about` | Everyone | Information about TrucklineMP |
+
+If `/profile` says a user has not linked their account, they still need to complete **Step 3** above.
+
+---
+
+## Linked Roles vs. TrucklineMP Connections
+
+These are two different features:
+
+| | **Discord Linked Roles** | **TrucklineMP Connections** (Settings) |
+|---|--------------------------|----------------------------------------|
+| **Where** | Discord → User Settings → Linked Roles | trucklinemp.com → Settings → Connections |
+| **Purpose** | Unlock Discord roles on a server | Account recovery, identity on your TrucklineMP profile |
+| **Required for roles** | Yes | No |
+
+Connecting Discord under TrucklineMP **Connections** does not by itself assign Linked Roles. Members must still connect through Discord's **Linked Roles** menu.
+
+---
+
+## Troubleshooting
+
+### "TrucklineMP doesn't appear in Linked Roles"
+
+- Confirm the TrucklineMP bot is in your server
+- Make sure you are a server admin with **Manage Server**
+- Try refreshing Server Settings or restarting the Discord client
+
+### "Roles aren't assigned after connecting"
+
+- Check that the Linked Role requirement matches what the member qualifies for (e.g. **Account linked** = Yes)
+- Ensure the bot's role is **above** the roles it should assign in **Server Settings → Roles**
+- Ask the member to disconnect and reconnect TrucklineMP under **User Settings → Linked Roles**
+
+### "This Discord account does not match your linked TrucklineMP account"
+
+- The member signed into TrucklineMP with an account already tied to a different Discord user
+- They should use the same Discord account everywhere, or update their TrucklineMP connections first
+
+### `/profile` shows "has not linked their TrucklineMP account"
+
+- The member has not completed the Linked Roles connection flow
+- Direct them to **User Settings → Linked Roles → TrucklineMP → Connect**
+
+### Staff role not updating
+
+- Staff status is read from TrucklineMP's staff system
+- After a staff change on the website, the member's connection syncs automatically; they can reconnect in Linked Roles if needed
+
+---
+
+## Best Practices
+
+- Create one **verified member** Linked Role before opening recruitment or member-only channels
+- Place the bot role high enough in the role list to assign your linked roles
+- Pin a short message in `#rules` or `#welcome` explaining how to connect via **Linked Roles**
+- For VTCs, verify the server on TrucklineMP so `/vtc` and your public profile stay accurate
+
+---
+
+## Related Guides
+
+- [VTC Discord Verification](/guides/vtc-discord-verification/) — Link your server to your VTC profile
+- [Connections](/guides/connections/) — Link Discord, Google, and other accounts on TrucklineMP
+- [VTC Recruitment](/guides/vtc-recruitment/) — Onboard new members after they verify

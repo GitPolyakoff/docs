@@ -126,6 +126,13 @@ export default defineConfig({
 							},
 						},
 						{
+							slug: 'guides/discord-linked-roles',
+							label: 'Discord Linked Roles',
+							translations: {
+								pl: 'Połączone Role Discord',
+							},
+						},
+						{
 							slug: 'guides/vtc-visibility',
 							label: 'Visibility',
 							translations: {
