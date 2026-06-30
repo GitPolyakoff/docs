@@ -1,0 +1,37 @@
+---
+import { fetchContributorBadgeProgram } from '../lib/truckline-api';
+import RecognizedContributorCard from './RecognizedContributorCard.astro';
+
+const program = await fetchContributorBadgeProgram();
+const recipients = program?.recipients ?? [];
+---
+
+{recipients.length === 0 ? (
+	<p class="recognized-empty">
+		No recognized documentation contributors yet. The list syncs automatically from TrucklineMP when badges are
+		awarded.
+	</p>
+) : (
+	<div class="recognized-grid">
+		{recipients.map((member) => (
+			<RecognizedContributorCard member={member} />
+		))}
+	</div>
+)}
+
+<style>
+	.recognized-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+		gap: 1rem;
+		margin-block: 1.5rem;
+	}
+
+	.recognized-empty {
+		margin-block: 1.5rem;
+		padding: 1rem 1.25rem;
+		border: 1px dashed var(--sl-color-hairline);
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+</style>

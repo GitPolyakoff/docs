@@ -5,13 +5,7 @@ export type Contributor = {
 	contributions: string[];
 };
 
-export const communityContributors: Contributor[] = [
-	{
-		github: 'GitPolyakoff',
-		role: 'Translator',
-		contributions: ['Russian (ru) documentation — core guides and homepage'],
-	},
-];
+export const communityContributors: Contributor[] = [];
 
 export const teamContributors: Contributor[] = [
 	{

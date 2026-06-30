@@ -1,0 +1,106 @@
+---
+import type { RecognizedMember } from '../lib/truckline-api';
+
+interface Props {
+	member: RecognizedMember;
+}
+
+const { member } = Astro.props;
+const avatar = member.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=1a1a1a&color=c8ff00`;
+---
+
+<article class="recognized-card">
+	<a href={member.profileUrl} target="_blank" rel="noopener noreferrer" class="recognized-avatar-link">
+		<img src={avatar} alt={member.name} width="72" height="72" class="recognized-avatar" loading="lazy" />
+	</a>
+	<div class="recognized-body">
+		<h3 class="recognized-name">
+			<a href={member.profileUrl} target="_blank" rel="noopener noreferrer">{member.name}</a>
+		</h3>
+		{member.handle && <p class="recognized-handle">@{member.handle}</p>}
+		<p class="recognized-reason">{member.reason}</p>
+		<a href={member.profileUrl} target="_blank" rel="noopener noreferrer" class="recognized-profile">
+			View TrucklineMP profile
+		</a>
+	</div>
+</article>
+
+<style>
+	.recognized-card {
+		display: flex;
+		gap: 1.25rem;
+		padding: 1.25rem;
+		border: 1px solid var(--sl-color-hairline);
+		background: var(--sl-color-gray-6);
+		transition:
+			border-color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.recognized-card:hover {
+		border-color: rgba(132, 204, 22, 0.35);
+		transform: translateY(-2px);
+	}
+
+	.recognized-avatar-link {
+		flex-shrink: 0;
+		line-height: 0;
+	}
+
+	.recognized-avatar {
+		display: block;
+		border: 2px solid var(--sl-color-hairline);
+		border-radius: 999px;
+		object-fit: cover;
+		transition: border-color 0.2s ease;
+	}
+
+	.recognized-card:hover .recognized-avatar {
+		border-color: #84cc16;
+	}
+
+	.recognized-body {
+		min-width: 0;
+	}
+
+	.recognized-name {
+		margin: 0 0 0.25rem;
+		font-size: var(--sl-text-lg);
+		font-weight: 800;
+		letter-spacing: -0.01em;
+	}
+
+	.recognized-name a {
+		color: var(--sl-color-white);
+		text-decoration: none;
+	}
+
+	.recognized-name a:hover {
+		color: #84cc16;
+	}
+
+	.recognized-handle {
+		margin: 0 0 0.75rem;
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+
+	.recognized-reason {
+		margin: 0 0 0.75rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+		line-height: 1.5;
+	}
+
+	.recognized-profile {
+		font-family: var(--sl-font-mono);
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+		text-decoration: none;
+	}
+
+	.recognized-profile:hover {
+		color: #84cc16;
+	}
+</style>
