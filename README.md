@@ -2,7 +2,7 @@
 
 Official documentation for TrucklineMP, the multiplayer platform for the trucking community.
 
-This site contains guides, rules, features overview, and FAQs for players. Documentation is available in multiple languages including English, Polish, German, and French.
+This site contains guides, rules, features overview, and FAQs for players. Documentation is available in multiple languages including English, Polish, German, French and Russian.
 
 ## Contributing
 

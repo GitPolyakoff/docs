@@ -109,10 +109,16 @@ export default defineConfig({
 						{
 							slug: 'guides/vtc-creating',
 							label: 'Creating a VTC',
+							translations: {
+								ru: 'Создание VTC',
+							},
 						},
 						{
 							slug: 'guides/vtc-directory',
 							label: 'VTC Directory',
+							translations: {
+								ru: 'Каталог VTC',
+							},
 						},
 						{
 							slug: 'guides/vtc-general-settings',
@@ -149,10 +155,16 @@ export default defineConfig({
 						{
 							slug: 'guides/vtc-events',
 							label: 'Events',
+							translations: {
+								ru: 'Мероприятия',
+							},
 						},
 						{
 							slug: 'guides/vtc-news',
 							label: 'News',
+							translations: {
+								ru: 'Новости',
+							},
 						},
 						{
 							slug: 'guides/vtc-announcements',
@@ -181,10 +193,16 @@ export default defineConfig({
 						{
 							slug: 'guides/vtc-activity-log',
 							label: 'Activity Log',
+							translations: {
+								ru: 'Журнал активности',
+							},
 						},
 						{
 							slug: 'guides/vtc-disbanding',
 							label: 'Disbanding a VTC',
+							translations: {
+								ru: 'Расформирование VTC',
+							},
 						},
 					],
 				},
@@ -199,6 +217,9 @@ export default defineConfig({
 						{
 							slug: 'guides/discord-connection-flows',
 							label: 'Connection Flows',
+							translations: {
+								ru: 'Варианты подключения Discord',
+							},
 						},
 						{
 							slug: 'guides/discord-linked-roles',
@@ -211,10 +232,16 @@ export default defineConfig({
 						{
 							slug: 'guides/discord-notifications',
 							label: 'Discord Notifications',
+							translations: {
+								ru: 'Уведомления Discord',
+							},
 						},
 						{
 							slug: 'guides/official-discord-server',
 							label: 'Official Discord Server',
+							translations: {
+								ru: 'Официальный сервер Discord',
+							},
 						},
 					],
 				},
@@ -236,10 +263,16 @@ export default defineConfig({
 						{
 							slug: 'guides/public-profile',
 							label: 'Public Profile',
+							translations: {
+								ru: 'Публичный профиль',
+							},
 						},
 						{
 							slug: 'guides/user-directory',
 							label: 'User Directory',
+							translations: {
+								ru: 'Каталог пользователей',
+							},
 						},
 						{
 							slug: 'guides/account-security',
@@ -260,10 +293,16 @@ export default defineConfig({
 						{
 							slug: 'guides/regional-timezone',
 							label: 'Regional & Timezone',
+							translations: {
+								ru: 'Регион и часовой пояс',
+							},
 						},
 						{
 							slug: 'guides/notifications',
 							label: 'Notifications',
+							translations: {
+								ru: 'Уведомления',
+							},
 						},
 						{
 							slug: 'guides/appearance-preferences',
@@ -276,14 +315,23 @@ export default defineConfig({
 						{
 							slug: 'guides/forum',
 							label: 'Forum',
+							translations: {
+								ru: 'Форум',
+							},
 						},
 						{
 							slug: 'guides/support-tickets',
 							label: 'Support Tickets',
+							translations: {
+								ru: 'Тикеты поддержки',
+							},
 						},
 						{
 							slug: 'guides/bans-appeals',
 							label: 'Bans & Appeals',
+							translations: {
+								ru: 'Баны и апелляции',
+							},
 						},
 						{
 							slug: 'guides/account-deletion',
@@ -333,6 +381,9 @@ export default defineConfig({
 						{
 							slug: 'guides/developers/console',
 							label: 'Developer Console',
+							translations: {
+								ru: 'Консоль разработчика',
+							},
 						},
 					],
 				},
