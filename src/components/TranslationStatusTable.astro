@@ -1,0 +1,154 @@
+---
+import { getCollection } from 'astro:content';
+
+const LOCALES = ['ru', 'pl', 'de', 'fr', 'ta'];
+const DAY_MS = 86400000;
+
+const allDocs = await getCollection('docs');
+
+const docMap = new Map();
+
+for (const doc of allDocs) {
+	// Entry ids look like "guides/vtc-events" or "ru/guides/vtc-events"
+	const firstSegment = doc.id.split('/')[0];
+	const locale = LOCALES.includes(firstSegment) ? firstSegment : 'root';
+	const baseId = locale === 'root' ? doc.id : doc.id.split('/').slice(1).join('/');
+
+	if (!docMap.has(baseId)) {
+		docMap.set(baseId, { baseId, title: doc.data.title, entries: {} });
+	}
+	const row = docMap.get(baseId);
+	if (locale === 'root') row.title = doc.data.title;
+	row.entries[locale] = {
+		date: doc.data.lastUpdated ? new Date(doc.data.lastUpdated) : null,
+		version: doc.data.version ?? null,
+	};
+}
+
+const rows = [...docMap.values()].sort((a, b) => a.title.localeCompare(b.title));
+
+function formatDate(date) {
+	return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function cellLabel(entry) {
+	if (entry.version && entry.date) return `v${entry.version} · ${formatDate(entry.date)}`;
+	if (entry.version) return `v${entry.version}`;
+	if (entry.date) return formatDate(entry.date);
+	return 'n/a';
+}
+
+function getStatus(english, translation) {
+	if (!translation) {
+		return { state: 'missing', label: 'Missing' };
+	}
+	// Versions are the source of truth when both sides have one.
+	if (english?.version && translation.version) {
+		return {
+			state: english.version === translation.version ? 'current' : 'outdated',
+			label: cellLabel(translation),
+		};
+	}
+	// Fall back to date comparison.
+	if (english?.date && (!translation.date || english.date.getTime() - translation.date.getTime() > DAY_MS)) {
+		return { state: 'outdated', label: cellLabel(translation) };
+	}
+	return { state: 'current', label: cellLabel(translation) };
+}
+---
+
+<div class="translation-table-container">
+	<table class="translation-table">
+		<thead>
+			<tr>
+				<th>Page</th>
+				<th title="English">EN</th>
+				<th title="Russian">RU</th>
+				<th title="Polish">PL</th>
+				<th title="German">DE</th>
+				<th title="French">FR</th>
+				<th title="Tamil">TA</th>
+			</tr>
+		</thead>
+		<tbody>
+			{rows.map((row) => {
+				const en = row.entries.root ?? null;
+				return (
+					<tr>
+						<td class="title-cell">{row.title}</td>
+						<td class="status-cell current">
+							<span class="status-badge">{en ? cellLabel(en) : 'n/a'}</span>
+						</td>
+						{LOCALES.map((locale) => {
+							const { state, label } = getStatus(en, row.entries[locale] ?? null);
+							return (
+								<td class={`status-cell ${state}`}>
+									<span class="status-badge">{label}</span>
+								</td>
+							);
+						})}
+					</tr>
+				);
+			})}
+		</tbody>
+	</table>
+</div>
+
+<style>
+	.translation-table-container {
+		overflow-x: auto;
+		margin: 2rem 0;
+	}
+
+	.translation-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--sl-text-sm);
+	}
+
+	.translation-table th {
+		background-color: var(--sl-color-gray-6);
+		padding: 0.75rem;
+		text-align: left;
+		font-weight: 600;
+		border-bottom: 1px solid var(--sl-color-hairline);
+	}
+
+	.translation-table td {
+		padding: 0.75rem;
+		border-bottom: 1px solid var(--sl-color-hairline);
+	}
+
+	.title-cell {
+		font-weight: 500;
+		max-width: 250px;
+	}
+
+	.status-cell {
+		text-align: center;
+	}
+
+	.status-badge {
+		display: inline-block;
+		padding: 0.25rem 0.75rem;
+		border-radius: 0.25rem;
+		font-size: var(--sl-text-xs);
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
+	.status-cell.current .status-badge {
+		background-color: var(--sl-color-green-low);
+		color: var(--sl-color-green-high);
+	}
+
+	.status-cell.outdated .status-badge {
+		background-color: var(--sl-color-orange-low);
+		color: var(--sl-color-orange-high);
+	}
+
+	.status-cell.missing .status-badge {
+		background-color: var(--sl-color-red-low);
+		color: var(--sl-color-red-high);
+	}
+</style>

@@ -1,6 +1,8 @@
 ---
 title: Developer Console
 description: "Tour the TrucklineMP Developer Console: projects, keys, analytics, audit logs, quotas, and resources."
+version: 1.2.0
+lastUpdated: 2026-07-08
 ---
 
 # Developer Console
@@ -26,7 +28,7 @@ The sidebar is grouped into four areas:
 
 | Page | Purpose |
 |------|---------|
-| **API Keys** | Create and revoke `tl_` keys per project |
+| **API Keys** | Create and revoke `tlmp_api_` keys per project |
 | **OAuth Apps** | Register and configure OAuth applications |
 | **Webhooks** | Subscribe to platform event pushes |
 | **API Library** | Embedded ReDoc for `/api/v1/openapi.json` |
@@ -62,7 +64,7 @@ Create a project before generating keys or OAuth credentials.
 
 ## API keys
 
-- Prefix: `tl_`
+- Prefix: `tlmp_api_` (older keys may still use the legacy `tl_` prefix)
 - Maximum **10 active keys** per project
 - Secret shown **once** at creation
 - Read-only access to public REST data plus higher rate limits

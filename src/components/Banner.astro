@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+
+const LOCALES = ['ru', 'pl', 'de', 'fr', 'ta'];
+const DAY_MS = 86400000;
+
+const { entry, locale, id } = Astro.locals.starlightRoute;
+const banner = entry.data.banner;
+
+let outdated = false;
+let englishHref = '';
+let englishDateLabel = '';
+
+if (locale && LOCALES.includes(locale)) {
+	const baseId = id.split('/').slice(1).join('/');
+	const allDocs = await getCollection('docs');
+	const english = allDocs.find((doc) => doc.id === baseId);
+	const englishDate = english?.data.lastUpdated ? new Date(english.data.lastUpdated) : null;
+	const translationDate = entry.data.lastUpdated ? new Date(entry.data.lastUpdated) : null;
+	const englishVersion = english?.data.version;
+	const translationVersion = entry.data.version;
+
+	if (englishVersion && translationVersion) {
+		// Both versioned: the version is the source of truth.
+		outdated = englishVersion !== translationVersion;
+	} else if (englishDate) {
+		// Fall back to dates when either side has no version.
+		outdated = !translationDate || englishDate.getTime() - translationDate.getTime() > DAY_MS;
+	}
+
+	if (outdated) {
+		englishHref = baseId === 'index' ? '/' : `/${baseId}/`;
+		englishDateLabel = englishVersion
+			? `v${englishVersion}`
+			: englishDate
+				? englishDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+				: '';
+	}
+}
+---
+
+{banner && <div class="sl-banner" set:html={banner.content} />}
+
+{outdated && (
+	<div class="translation-outdated">
+		This translation may be outdated. The current English version is
+		<strong> {englishDateLabel}</strong>.
+		<a href={englishHref}>View the English version</a>
+	</div>
+)}
+
+<style>
+	.sl-banner {
+		--__sl-banner-text: var(--sl-color-banner-text, var(--sl-color-text-invert));
+		padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+		background-color: var(--sl-color-banner-bg, var(--sl-color-bg-accent));
+		color: var(--__sl-banner-text);
+		line-height: var(--sl-line-height-headings);
+		text-align: center;
+		text-wrap: balance;
+		box-shadow: var(--sl-shadow-sm);
+	}
+	.sl-banner :global(a) {
+		color: var(--__sl-banner-text);
+	}
+
+	.translation-outdated {
+		padding: var(--sl-nav-pad-y) var(--sl-nav-pad-x);
+		background-color: var(--sl-color-orange-low);
+		color: var(--sl-color-orange-high);
+		border-bottom: 1px solid var(--sl-color-orange);
+		line-height: var(--sl-line-height-headings);
+		text-align: center;
+		text-wrap: balance;
+		font-size: var(--sl-text-sm);
+	}
+
+	.translation-outdated a {
+		color: var(--sl-color-orange-high);
+		text-decoration: underline;
+		margin-inline-start: 0.5rem;
+	}
+</style>

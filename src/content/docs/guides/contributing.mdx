@@ -1,6 +1,8 @@
 ---
 title: Contributing Translations
 description: Full guide for contributing translations to the TrucklineMP documentation — file structure, quality standards, and submission process.
+version: 1.2.0
+lastUpdated: 2026-07-08
 ---
 
 # Contributing Translations
@@ -10,6 +12,32 @@ Thank you for your interest in translating the TrucklineMP documentation! This g
 ## Why Translate?
 
 TrucklineMP is a global community. Translating our documentation helps players and VTC managers around the world understand how to use the platform in their native language. Good translations make the platform more accessible and welcoming.
+
+## Join the Contributors Community
+
+Want to contribute or have questions about translation? Join our dedicated contributors Discord server:
+
+[https://discord.gg/jsuGrx4Rbv](https://discord.gg/jsuGrx4Rbv)
+
+This is the place to connect with other translators, ask questions, and coordinate work on the documentation.
+
+## Document Versioning
+
+Every documentation page carries two frontmatter fields:
+
+```yaml
+---
+title: Example Page
+description: ...
+version: 1.2.0
+lastUpdated: 2026-07-09
+---
+```
+
+- **`version`** identifies the content revision of the page. When the English page changes meaningfully, its version is bumped.
+- **`lastUpdated`** is the date the file was last edited.
+
+When you translate or update a translation, **copy the `version` from the current English page** and set `lastUpdated` to today's date. A translation whose version matches the English page shows as **Current** on the [Translation Status](/guides/translation-status/) page; a mismatch shows as **Outdated** and displays a notice banner on the translated page. Both fields are required — the CI check will fail a pull request that omits them.
 
 ## Currently Supported Languages
 

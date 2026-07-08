@@ -1,6 +1,8 @@
 ---
 title: Public API
 description: Authentication, base URLs, rate limits, and endpoint overview for the TrucklineMP Public REST API.
+version: 1.2.0
+lastUpdated: 2026-07-08
 ---
 
 # Public API
@@ -14,18 +16,20 @@ All endpoints are available without authentication. Passing a Developer Console 
 Send your API key in the `Authorization` header:
 
 ```
-Authorization: Bearer tl_YOUR_API_KEY
+Authorization: Bearer tlmp_api_YOUR_API_KEY
 ```
 
 API keys:
 
-- Use the `tl_` prefix (for example `tl_a1b2c3...`).
+- Use the `tlmp_api_` prefix (for example `tlmp_api_a1b2c3...`). Older keys issued with the legacy `tl_` prefix still work.
 - Are created per project in the [Developer Console](https://trucklinemp.com/developer).
 - Are shown **once** at creation. Store them securely.
 - Provide **read-only** access to public data. They do not unlock private account actions or write operations.
 - Can be revoked at any time from the console.
 
 Invalid or revoked keys are ignored. The request is treated as anonymous and receives anonymous rate limits.
+
+If your API key is exposed publicly (e.g. committed to a repository), rotate it immediately — see [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/).
 
 ### Session cookies
 
@@ -64,7 +68,7 @@ https://trucklinemp.com/api/v1/vtcs
 ```bash
 curl "https://api.trucklinemp.com/version"
 
-curl -H "Authorization: Bearer tl_YOUR_API_KEY" \
+curl -H "Authorization: Bearer tlmp_api_YOUR_API_KEY" \
   "https://api.trucklinemp.com/vtcs?limit=10"
 ```
 
@@ -135,3 +139,4 @@ Common error codes:
 - [Developer Platform Overview](/guides/developers/overview/)
 - [OAuth Apps](/guides/developers/oauth-apps/) (user sign-in, not required for public read endpoints)
 - [Webhooks](/guides/developers/webhooks/) (event push notifications)
+- [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/) (remediation if a key is exposed)
