@@ -296,6 +296,7 @@ export default defineConfig({
               translations: {
                 pl: "Bezpieczeństwo Konta",
                 ru: "Безопасность аккаунта",
+                de: "Kontosicherheit",
               },
             },
             {
