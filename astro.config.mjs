@@ -64,7 +64,7 @@ export default defineConfig({
         SiteTitle: "./src/components/SiteTitle.astro",
         Footer: "./src/components/Footer.astro",
         SidebarSublist: "./src/components/SidebarSublist.astro",
-        PageFrame: "./src/components/PageFrame.astro",
+        Banner: "./src/components/Banner.astro",
       },
       sidebar: [
         {
@@ -372,7 +372,7 @@ export default defineConfig({
               label: "Translate Documentation",
               translations: {
                 pl: "Tłumacz Dokumentację",
-                ru: "Перевод dokumentacji",
+                ru: "Перевод документации",
               },
             },
             {

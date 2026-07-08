@@ -1,85 +1,41 @@
 ---
 import { getCollection } from 'astro:content';
 
+const LOCALES = ['ru', 'pl', 'de', 'fr'];
+const DAY_MS = 86400000;
+
 const allDocs = await getCollection('docs');
 
-interface DocStatus {
-	title: string;
-	slug: string;
-	root: { lastUpdated: string; version: string } | null;
-	ru: { lastUpdated: string; version: string } | null;
-	pl: { lastUpdated: string; version: string } | null;
-	de: { lastUpdated: string; version: string } | null;
-	fr: { lastUpdated: string; version: string } | null;
+const docMap = new Map();
+
+for (const doc of allDocs) {
+	// Entry ids look like "guides/vtc-events" or "ru/guides/vtc-events"
+	const firstSegment = doc.id.split('/')[0];
+	const locale = LOCALES.includes(firstSegment) ? firstSegment : 'root';
+	const baseId = locale === 'root' ? doc.id : doc.id.split('/').slice(1).join('/');
+
+	if (!docMap.has(baseId)) {
+		docMap.set(baseId, { baseId, title: doc.data.title, dates: {} });
+	}
+	const row = docMap.get(baseId);
+	if (locale === 'root') row.title = doc.data.title;
+	row.dates[locale] = doc.data.lastUpdated ? new Date(doc.data.lastUpdated) : null;
 }
 
-const docMap = new Map<string, DocStatus>();
+const rows = [...docMap.values()].sort((a, b) => a.title.localeCompare(b.title));
 
-// Group docs by slug
-allDocs.forEach(doc => {
-	const baseSlug = doc.slug.replace(/^(ru|pl|de|fr)\//, '');
-	const locale = doc.slug.startsWith('ru/') ? 'ru' :
-	               doc.slug.startsWith('pl/') ? 'pl' :
-	               doc.slug.startsWith('de/') ? 'de' :
-	               doc.slug.startsWith('fr/') ? 'fr' : 'root';
-
-	if (!docMap.has(baseSlug)) {
-		docMap.set(baseSlug, {
-			title: doc.data.title,
-			slug: baseSlug,
-			root: null,
-			ru: null,
-			pl: null,
-			de: null,
-			fr: null,
-		});
-	}
-
-	const entry = docMap.get(baseSlug)!;
-	if (locale === 'root' && doc.id.startsWith('docs/') && !doc.id.includes('/')) {
-		entry.root = {
-			lastUpdated: doc.data.lastUpdated,
-			version: doc.data.version,
-		};
-	} else if (locale !== 'root') {
-		entry[locale as keyof Omit<DocStatus, 'title' | 'slug' | 'root'>] = {
-			lastUpdated: doc.data.lastUpdated,
-			version: doc.data.version,
-		};
-	}
-});
-
-// Sort by title
-const sortedDocs = Array.from(docMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-
-interface LanguageStatus {
-	status: 'current' | 'outdated' | 'missing';
-	date: string;
-	version: string;
+function formatDate(date) {
+	return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function getStatus(englishDate: string, translationDate: string | null): LanguageStatus {
+function getStatus(englishDate, translationDate) {
 	if (!translationDate) {
-		return { status: 'missing', date: '-', version: '-' };
+		return { state: 'missing', label: 'Missing' };
 	}
-
-	const engDate = new Date(englishDate).getTime();
-	const transDate = new Date(translationDate).getTime();
-	const dayInMs = 86400000;
-
-	if (engDate - transDate > dayInMs) {
-		return {
-			status: 'outdated',
-			date: new Date(translationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-			version: translationDate.split('T')[0],
-		};
+	if (englishDate && englishDate.getTime() - translationDate.getTime() > DAY_MS) {
+		return { state: 'outdated', label: formatDate(translationDate) };
 	}
-
-	return {
-		status: 'current',
-		date: new Date(translationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-		version: translationDate.split('T')[0],
-	};
+	return { state: 'current', label: formatDate(translationDate) };
 }
 ---
 
@@ -96,31 +52,22 @@ function getStatus(englishDate: string, translationDate: string | null): Languag
 			</tr>
 		</thead>
 		<tbody>
-			{sortedDocs.map(doc => {
-				const enStatus = doc.root ? { status: 'current' as const, date: new Date(doc.root.lastUpdated).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) } : null;
-				const ruStatus = doc.root ? getStatus(doc.root.lastUpdated, doc.ru?.lastUpdated || null) : null;
-				const plStatus = doc.root ? getStatus(doc.root.lastUpdated, doc.pl?.lastUpdated || null) : null;
-				const deStatus = doc.root ? getStatus(doc.root.lastUpdated, doc.de?.lastUpdated || null) : null;
-				const frStatus = doc.root ? getStatus(doc.root.lastUpdated, doc.fr?.lastUpdated || null) : null;
-
+			{rows.map((row) => {
+				const en = row.dates.root ?? null;
 				return (
 					<tr>
-						<td class="title-cell">{doc.title}</td>
+						<td class="title-cell">{row.title}</td>
 						<td class="status-cell current">
-							{enStatus && <span class="status-badge">{enStatus.date}</span>}
+							<span class="status-badge">{en ? formatDate(en) : 'n/a'}</span>
 						</td>
-						<td class={`status-cell ${ruStatus?.status}`}>
-							<span class="status-badge" title={ruStatus?.version}>{ruStatus?.date}</span>
-						</td>
-						<td class={`status-cell ${plStatus?.status}`}>
-							<span class="status-badge" title={plStatus?.version}>{plStatus?.date}</span>
-						</td>
-						<td class={`status-cell ${deStatus?.status}`}>
-							<span class="status-badge" title={deStatus?.version}>{deStatus?.date}</span>
-						</td>
-						<td class={`status-cell ${frStatus?.status}`}>
-							<span class="status-badge" title={frStatus?.version}>{frStatus?.date}</span>
-						</td>
+						{LOCALES.map((locale) => {
+							const { state, label } = getStatus(en, row.dates[locale] ?? null);
+							return (
+								<td class={`status-cell ${state}`}>
+									<span class="status-badge">{label}</span>
+								</td>
+							);
+						})}
 					</tr>
 				);
 			})}
@@ -168,26 +115,21 @@ function getStatus(englishDate: string, translationDate: string | null): Languag
 		border-radius: 0.25rem;
 		font-size: var(--sl-text-xs);
 		font-weight: 500;
+		white-space: nowrap;
 	}
 
 	.status-cell.current .status-badge {
 		background-color: var(--sl-color-green-low);
-		color: var(--sl-color-green);
+		color: var(--sl-color-green-high);
 	}
 
 	.status-cell.outdated .status-badge {
 		background-color: var(--sl-color-orange-low);
-		color: var(--sl-color-orange);
+		color: var(--sl-color-orange-high);
 	}
 
 	.status-cell.missing .status-badge {
 		background-color: var(--sl-color-red-low);
-		color: var(--sl-color-red);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.translation-table th {
-			background-color: var(--sl-color-gray-5);
-		}
+		color: var(--sl-color-red-high);
 	}
 </style>
