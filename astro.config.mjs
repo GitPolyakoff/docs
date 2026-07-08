@@ -64,9 +64,7 @@ export default defineConfig({
         SiteTitle: "./src/components/SiteTitle.astro",
         Footer: "./src/components/Footer.astro",
         SidebarSublist: "./src/components/SidebarSublist.astro",
-      },
-      overrides: {
-        docLayout: "./src/layouts/DocsPage.astro",
+        PageFrame: "./src/components/PageFrame.astro",
       },
       sidebar: [
         {

@@ -1,16 +1,44 @@
 ---
+import { getCollection } from 'astro:content';
 import type { Props } from '@astrojs/starlight/props';
 import Default from '@astrojs/starlight/layouts/DocsPage.astro';
 import TranslationOutdatedBanner from '../components/TranslationOutdatedBanner.astro';
 
 const props = Astro.props as Props;
 const lastUpdated = (props.entry.data as any).lastUpdated || null;
+const locale = props.entry.collection || 'root';
+const slug = props.entry.slug;
+
+// Get translation status
+let isOutdated = false;
+try {
+	const allDocs = await getCollection('docs');
+	const englishDoc = allDocs.find(doc => doc.slug === slug && doc.id.startsWith('docs/') && !doc.id.includes('/'));
+	const translatedDoc = allDocs.find(doc => doc.slug === slug && doc.id.startsWith(`docs/${locale}/`));
+
+	if (englishDoc && translatedDoc && locale !== 'root') {
+		const englishDate = new Date((englishDoc.data as any).lastUpdated || '2026-01-01');
+		const translatedDate = new Date((translatedDoc.data as any).lastUpdated || '2026-01-01');
+		isOutdated = englishDate.getTime() - translatedDate.getTime() > 86400000;
+	}
+} catch (e) {
+	// Silently fail if we can't get the collection
+}
 ---
 
 <Default {...props}>
-	<TranslationOutdatedBanner slot="before-content" slug={props.entry.slug} locale={props.entry.collection} />
+	{isOutdated && (
+		<div style="background-color: var(--sl-color-yellow-low); border: 1px solid var(--sl-color-yellow); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem; font-size: var(--sl-text-sm); color: var(--sl-color-text-accent);">
+			<p style="margin: 0;">
+				This translation may be outdated. Latest English version updated <strong>{new Date((await getCollection('docs')).find(doc => doc.slug === slug && doc.id.startsWith('docs/') && !doc.id.includes('/'))?.data.lastUpdated || Date.now()).toLocaleDateString()}</strong>.
+				<a href={`/${slug}`} style="color: var(--sl-color-text-accent); text-decoration: underline;">View the English version</a>
+			</p>
+		</div>
+	)}
 	<slot />
-	<div slot="after-content" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--sl-color-hairline); font-size: var(--sl-text-xs); color: var(--sl-color-gray-3);">
-		{lastUpdated && `Last updated: ${new Date(lastUpdated).toLocaleDateString()}`}
-	</div>
+	{lastUpdated && (
+		<div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--sl-color-hairline); font-size: var(--sl-text-xs); color: var(--sl-color-gray-3);">
+			Last updated: {new Date(lastUpdated).toLocaleDateString()}
+		</div>
+	)}
 </Default>
