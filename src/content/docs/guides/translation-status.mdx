@@ -9,15 +9,17 @@ import TranslationStatusTable from '../../../components/TranslationStatusTable.a
 
 # Translation Status
 
-This page shows which documentation pages are translated and how current each translation is. A green status means the translation is up-to-date with the English version. Orange means it may be outdated. Red means it hasn't been translated yet.
+This page shows which documentation pages are translated and how current each translation is. Each cell shows the document version and its last update date. A green status means the translation matches the English version. Orange means it is behind. Red means it hasn't been translated yet.
 
 <TranslationStatusTable />
 
 ## Legend
 
-- **Current** - Translation is within 1 day of the English version
-- **Outdated** - Translation is more than 1 day behind the English version
+- **Current** - Translation has the same version as the English page
+- **Outdated** - Translation has an older version than the English page (or, if no version is set, is more than 1 day behind by date)
 - **Missing** - No translation exists for this language yet
+
+When an English page changes meaningfully, its `version` is bumped. Translators update the translation and set its `version` to match - that is what marks it current again.
 
 ## How to Help
 

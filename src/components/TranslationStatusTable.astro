@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 
-const LOCALES = ['ru', 'pl', 'de', 'fr'];
+const LOCALES = ['ru', 'pl', 'de', 'fr', 'ta'];
 const DAY_MS = 86400000;
 
 const allDocs = await getCollection('docs');
@@ -15,11 +15,14 @@ for (const doc of allDocs) {
 	const baseId = locale === 'root' ? doc.id : doc.id.split('/').slice(1).join('/');
 
 	if (!docMap.has(baseId)) {
-		docMap.set(baseId, { baseId, title: doc.data.title, dates: {} });
+		docMap.set(baseId, { baseId, title: doc.data.title, entries: {} });
 	}
 	const row = docMap.get(baseId);
 	if (locale === 'root') row.title = doc.data.title;
-	row.dates[locale] = doc.data.lastUpdated ? new Date(doc.data.lastUpdated) : null;
+	row.entries[locale] = {
+		date: doc.data.lastUpdated ? new Date(doc.data.lastUpdated) : null,
+		version: doc.data.version ?? null,
+	};
 }
 
 const rows = [...docMap.values()].sort((a, b) => a.title.localeCompare(b.title));
@@ -28,14 +31,29 @@ function formatDate(date) {
 	return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function getStatus(englishDate, translationDate) {
-	if (!translationDate) {
+function cellLabel(entry) {
+	if (entry.version && entry.date) return `v${entry.version} · ${formatDate(entry.date)}`;
+	if (entry.version) return `v${entry.version}`;
+	if (entry.date) return formatDate(entry.date);
+	return 'n/a';
+}
+
+function getStatus(english, translation) {
+	if (!translation) {
 		return { state: 'missing', label: 'Missing' };
 	}
-	if (englishDate && englishDate.getTime() - translationDate.getTime() > DAY_MS) {
-		return { state: 'outdated', label: formatDate(translationDate) };
+	// Versions are the source of truth when both sides have one.
+	if (english?.version && translation.version) {
+		return {
+			state: english.version === translation.version ? 'current' : 'outdated',
+			label: cellLabel(translation),
+		};
 	}
-	return { state: 'current', label: formatDate(translationDate) };
+	// Fall back to date comparison.
+	if (english?.date && (!translation.date || english.date.getTime() - translation.date.getTime() > DAY_MS)) {
+		return { state: 'outdated', label: cellLabel(translation) };
+	}
+	return { state: 'current', label: cellLabel(translation) };
 }
 ---
 
@@ -49,19 +67,20 @@ function getStatus(englishDate, translationDate) {
 				<th title="Polish">PL</th>
 				<th title="German">DE</th>
 				<th title="French">FR</th>
+				<th title="Tamil">TA</th>
 			</tr>
 		</thead>
 		<tbody>
 			{rows.map((row) => {
-				const en = row.dates.root ?? null;
+				const en = row.entries.root ?? null;
 				return (
 					<tr>
 						<td class="title-cell">{row.title}</td>
 						<td class="status-cell current">
-							<span class="status-badge">{en ? formatDate(en) : 'n/a'}</span>
+							<span class="status-badge">{en ? cellLabel(en) : 'n/a'}</span>
 						</td>
 						{LOCALES.map((locale) => {
-							const { state, label } = getStatus(en, row.dates[locale] ?? null);
+							const { state, label } = getStatus(en, row.entries[locale] ?? null);
 							return (
 								<td class={`status-cell ${state}`}>
 									<span class="status-badge">{label}</span>

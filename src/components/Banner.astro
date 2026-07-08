@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 
-const LOCALES = ['ru', 'pl', 'de', 'fr'];
+const LOCALES = ['ru', 'pl', 'de', 'fr', 'ta'];
 const DAY_MS = 86400000;
 
 const { entry, locale, id } = Astro.locals.starlightRoute;
@@ -17,15 +17,24 @@ if (locale && LOCALES.includes(locale)) {
 	const english = allDocs.find((doc) => doc.id === baseId);
 	const englishDate = english?.data.lastUpdated ? new Date(english.data.lastUpdated) : null;
 	const translationDate = entry.data.lastUpdated ? new Date(entry.data.lastUpdated) : null;
+	const englishVersion = english?.data.version;
+	const translationVersion = entry.data.version;
 
-	if (englishDate && (!translationDate || englishDate.getTime() - translationDate.getTime() > DAY_MS)) {
-		outdated = true;
+	if (englishVersion && translationVersion) {
+		// Both versioned: the version is the source of truth.
+		outdated = englishVersion !== translationVersion;
+	} else if (englishDate) {
+		// Fall back to dates when either side has no version.
+		outdated = !translationDate || englishDate.getTime() - translationDate.getTime() > DAY_MS;
+	}
+
+	if (outdated) {
 		englishHref = baseId === 'index' ? '/' : `/${baseId}/`;
-		englishDateLabel = englishDate.toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-		});
+		englishDateLabel = englishVersion
+			? `v${englishVersion}`
+			: englishDate
+				? englishDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+				: '';
 	}
 }
 ---
@@ -34,7 +43,7 @@ if (locale && LOCALES.includes(locale)) {
 
 {outdated && (
 	<div class="translation-outdated">
-		This translation may be outdated. The English version was last updated on
+		This translation may be outdated. The current English version is
 		<strong> {englishDateLabel}</strong>.
 		<a href={englishHref}>View the English version</a>
 	</div>

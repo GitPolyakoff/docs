@@ -5,7 +5,7 @@ template: splash
 hero:
   tagline: தீவிர டிரக்கிங் சமூகத்திற்காக உருவாக்கப்பட்ட பல-பயனர் தளம்.
   image:
-    file: ../../assets/truckline_large_no_shadow.svg
+    file: ../../../assets/truckline_large_no_shadow.svg
     alt: TrucklineMP
   actions:
     - text: VTC வழிகாட்டிகள்
@@ -20,11 +20,13 @@ hero:
       link: /guides/contributors/
       icon: open-book
       variant: minimal
+version: 1.2.0
+lastUpdated: 2026-07-09
 ---
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
-import HomeSection from '../../components/HomeSection.astro';
-import QuickLinks from '../../components/QuickLinks.astro';
+import HomeSection from '../../../components/HomeSection.astro';
+import QuickLinks from '../../../components/QuickLinks.astro';
 
 <QuickLinks links={[
   { label: 'VTC Programs', href: '#vtc-programs' },
