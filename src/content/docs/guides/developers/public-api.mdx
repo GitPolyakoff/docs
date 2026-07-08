@@ -27,6 +27,8 @@ API keys:
 
 Invalid or revoked keys are ignored. The request is treated as anonymous and receives anonymous rate limits.
 
+If your API key is exposed publicly (e.g. committed to a repository), rotate it immediately — see [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/).
+
 ### Session cookies
 
 Some endpoints return extra fields when you are logged in on trucklinemp.com and send session cookies with the request (for example, member-only VTC fields). This is optional and intended for first-party use. Third-party integrations should rely on API keys and OAuth where applicable.
@@ -135,3 +137,4 @@ Common error codes:
 - [Developer Platform Overview](/guides/developers/overview/)
 - [OAuth Apps](/guides/developers/oauth-apps/) (user sign-in, not required for public read endpoints)
 - [Webhooks](/guides/developers/webhooks/) (event push notifications)
+- [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/) (remediation if a key is exposed)
