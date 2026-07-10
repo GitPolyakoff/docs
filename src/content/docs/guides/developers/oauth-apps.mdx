@@ -19,6 +19,14 @@ OAuth is separate from Public API keys. Use OAuth when you need to act on behalf
 4. On the **OAuth** page, set **redirect URIs** (one per line) and select **scopes**.
 5. Save changes. Copy the **client secret** when it is shown. It cannot be retrieved later.
 
+### Redirect URI rules
+
+- **Exact match** is required at authorize and token time (including path, port, and trailing slash).
+- **https://** public hosts are allowed.
+- **http://** is allowed only for local development hosts: `localhost`, `*.localhost`, `127.x.x.x`, private LAN ranges (`10/8`, `172.16/12`, `192.168/16`), and `host.docker.internal`.
+- **Custom app schemes** are allowed for native clients (for example `myapp://callback`).
+- Fragments (`#...`) and embedded credentials (`user:pass@`) are rejected.
+
 ### App types
 
 | Type | Client secret | Typical use |
@@ -132,6 +140,7 @@ Fields depend on the scopes granted to the access token. The subject is always i
 | `name` | string | Display name |
 | `picture` | string | Avatar URL |
 | `handle` | string | Public `@handle` (may be null) |
+| `steam_id` | string \| null | Linked SteamID64 |
 
 ### With `vtc:read` scope
 

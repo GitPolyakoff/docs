@@ -391,6 +391,13 @@ export default defineConfig({
               },
             },
             {
+              slug: "guides/developers/sdk-contributing",
+              label: "Contributing to the SDK",
+              translations: {
+                ru: "Вклад в SDK",
+              },
+            },
+            {
               slug: "guides/developers/oauth-apps",
               label: "OAuth Apps",
               translations: {

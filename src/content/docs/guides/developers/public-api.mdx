@@ -107,7 +107,9 @@ The OpenAPI spec at [trucklinemp.com/api/v1/openapi.json](https://trucklinemp.co
 | **VTCs** | `GET /vtcs`, `GET /vtcs/{idOrHandle}`, `GET /vtcs/{id}/members`, `GET /vtcs/{id}/news`, `GET /vtcs/{id}/events`, `GET /vtcs/{id}/roles` |
 | **Events** | `GET /events`, `GET /events/{eventId}`, `GET /events/{eventId}/attendees`, `GET /events/{eventId}/slots` |
 | **News** | `GET /news`, `GET /news/{newsId}` |
-| **Users** | `GET /users/search`, `GET /users/{handleOrId}`, `GET /users/{id}/bans`, `GET /users/{id}/events` |
+| **Users** | `GET /users/search`, `GET /users/{handleOrId}`, `GET /users/steam/{steamId}`, `GET /users/batch`, `GET /users/{id}/bans`, `GET /users/{id}/events` |
+
+Public user objects include a `steamId` field (SteamID64 string, or `null` if unlinked). You can also resolve a profile with `GET /users/{steamId}` or the dedicated `GET /users/steam/{steamId}` route.
 | **Bans** | `GET /bans`, `GET /bans/{id}` |
 | **Programs** | `GET /programs/badges/{slug}`, `GET /programs/recognition` |
 | **Session** | `GET /session` (cookie-based session introspection) |

@@ -1,48 +1,49 @@
 ---
 title: TypeScript SDK
-description: Install and use the official TrucklineMP TypeScript SDK for the Public API and webhook verification.
-version: 1.0.0
+description: Official @trucklinemp/sdk guide — Public API client, typed models, pagination, OAuth, webhooks, errors, and configuration.
+version: 2.0.0
 lastUpdated: 2026-07-10
 ---
 
 # TypeScript SDK
 
-`@trucklinemp/sdk` is the official TypeScript and JavaScript client for the TrucklineMP Public API. It handles base URLs, Bearer authentication, JSON errors, basic 429 retries, and webhook signature verification in Node.js.
+`@trucklinemp/sdk` is the official TypeScript and JavaScript toolkit for TrucklineMP integrations. It covers:
 
-The SDK does not replace the [Public API](/guides/developers/public-api/) reference. The OpenAPI spec remains the source of truth for every field and path. The SDK is a convenience layer for Node and modern JavaScript apps.
+- **Public API** client (`Truckline`) with typed models, retries, and pagination helpers
+- **OAuth** helpers (`TrucklineOAuth`, PKCE) for user sign-in
+- **Webhooks** signature verification and delivery handlers (Node.js)
+
+The [OpenAPI spec](https://trucklinemp.com/api/v1/openapi.json) remains the source of truth for every field. The SDK tracks common resources and stays intentionally thin.
 
 | | |
 |---|---|
 | Package | `@trucklinemp/sdk` |
+| Version | 0.2.x |
 | Registry | [npmjs.com](https://www.npmjs.com/package/@trucklinemp/sdk) |
 | Repository | [github.com/trucklinemp/sdk](https://github.com/trucklinemp/sdk) |
 | License | MIT |
-| Runtime | Node.js 18+ (global `fetch`) |
-
-## When to use the SDK
-
-| Use the SDK | Prefer raw HTTP |
-|-------------|-----------------|
-| Node bots, workers, backends | Browser-only snippets you want fully inline |
-| You want typed errors and retries | One-off curl tests |
-| You verify webhooks in Node | Non-Node webhook receivers |
-
-You can always call the same endpoints with `fetch` or curl. See [Public API](/guides/developers/public-api/).
+| Runtime | Node.js 18+ (global `fetch`); browser-capable for the HTTP client |
 
 ## Install
-
-Published on the **public npm registry**.
 
 ```bash
 npm install @trucklinemp/sdk
 ```
 
-No custom registry or GitHub token is required for install.
+### Entry points
 
-## Quick start
+| Import | Contents |
+|--------|----------|
+| `@trucklinemp/sdk` | Full client, models, errors; OAuth + webhooks re-exported |
+| `@trucklinemp/sdk/oauth` | OAuth / PKCE only |
+| `@trucklinemp/sdk/webhooks` | Webhook verify / handler only (uses Node `crypto`) |
+
+Prefer the subpath imports when you want a smaller surface (for example OAuth in a separate service).
+
+## Quick start (Public API)
 
 1. Enable Developer Mode and create a project in the [Developer Console](https://trucklinemp.com/developer).
-2. Create an API key and store the secret (`tlmp_api_...`).
+2. Create an API key (`tlmp_api_...`) and store it securely.
 3. Call the API:
 
 ```ts
@@ -52,28 +53,40 @@ const tl = new Truckline({
   apiKey: process.env.TRUCKLINE_API_KEY,
 });
 
-const version = await tl.meta.version();
-const vtcs = await tl.vtcs.list({ limit: 10 });
+console.log(tl.version); // SDK version string
+
+const { user } = await tl.users.get("some-handle");
+console.log(user.webId, user.steamId, user.name);
+
+const bySteam = await tl.users.getBySteam("76561198000000000");
 
 try {
-  await tl.users.get("some-handle");
+  await tl.vtcs.get("missing-vtc");
 } catch (err) {
   if (err instanceof TrucklineError) {
     console.error(err.status, err.code, err.requestId, err.message);
+    if (err.isRateLimited) console.error("retry after", err.retryAfter);
   }
 }
 ```
+
+Anonymous calls work on many public routes with lower rate limits. Always send a key in production.
 
 ## Configuration
 
 ```ts
 new Truckline({
   apiKey: "tlmp_api_...",
-  baseUrl: undefined,        // optional; defaults to https://api.trucklinemp.com
+  baseUrl: undefined,              // default https://api.trucklinemp.com
   timeoutMs: 30_000,
-  maxRetries: 1,             // retries on HTTP 429
-  headers: {},               // extra headers on every request
-  userAgent: "my-integration/1.0",
+  maxRetries: 1,                   // retries on 429 and 5xx
+  retryOnServerError: true,
+  headers: { "X-App": "my-bot" },
+  userAgent: "my-bot/1.0",         // Node only; default includes SDK version
+  debug: false,
+  onRequest: ({ method, url, attempt }) => {},
+  onResponse: ({ status, requestId, durationMs }) => {},
+  fetch: customFetch,              // optional
 });
 ```
 
@@ -82,15 +95,43 @@ new Truckline({
 | Option | Base URL |
 |--------|----------|
 | Default | `https://api.trucklinemp.com` |
-| `baseUrl: "http://localhost:3000/api/v1"` | Local Web app |
+| Local Web | `http://localhost:3000/api/v1` |
 
-Do not add an extra `/v1` path segment on `api.trucklinemp.com`. That hostname already routes to the v1 API. Details: [Public API base URLs](/guides/developers/public-api/#base-urls).
+Do **not** append an extra `/v1` on `api.trucklinemp.com`. See [Public API base URLs](/guides/developers/public-api/#base-urls).
+
+### Rate limit info
+
+After a request, inspect the last parsed rate-limit headers:
+
+```ts
+await tl.meta.version();
+console.log(tl.lastRateLimit);
+// { retryAfter, limit, remaining, reset }
+```
+
+## Typed models
+
+The package exports TypeScript types for public payloads (shapes may grow as the API does; optional fields stay optional):
+
+- Users: `PublicUser`, `PublicUserSearchResult`, `PublicUserBans`, …
+- VTCs / members: `VtcListItem`, `VtcMember`, `VtcNewsItem`, `VtcRole`
+- Events: `PublicEvent`, `PublicEventAttendee`, `PublicEventSlot`
+- News, bans, partners, badges, game servers, OAuth userinfo, webhook delivery
+
+Dates from the API are typed as ISO strings (`IsoDateString`).
+
+Example:
+
+```ts
+import type { PublicUser } from "@trucklinemp/sdk";
+
+const { user } = await tl.users.get("driver");
+const profile: PublicUser = user;
+```
 
 ## Resources
 
-Methods return the JSON body from the API. Shapes match the OpenAPI responses.
-
-### Platform and meta
+### Meta / platform
 
 ```ts
 await tl.meta.version();
@@ -102,12 +143,33 @@ await tl.meta.session();
 await tl.meta.recruitmentOpen();
 ```
 
+### Users
+
+```ts
+await tl.users.search({ q: "alex", page: 1, limit: 20 });
+await tl.users.get("handle-or-id-or-steamId64");
+await tl.users.getBySteam("7656119…");
+await tl.users.resolve("handle");          // returns PublicUser
+await tl.users.batch(["id1", "id2"]);      // auto-chunks at 50
+await tl.users.bans(userId);
+await tl.users.events(userId, { tab: "upcoming" });
+
+for await (const page of tl.users.iterateSearch({ q: "a", limit: 20 })) {
+  console.log(page.length);
+}
+
+const allMatches = await tl.users.searchAll({ q: "a", maxItems: 100 });
+```
+
+Public user objects include **`steamId`** when the account is linked.
+
 ### VTCs
 
 ```ts
-await tl.vtcs.list({ limit: 20 });
+await tl.vtcs.list({ limit: 20, q: "logistics" });
 await tl.vtcs.get("handle-or-id");
-await tl.vtcs.members("handle-or-id");
+await tl.vtcs.batch([1, 2, 3]);
+await tl.vtcs.members("handle");
 await tl.vtcs.news(vtcId);
 await tl.vtcs.events(vtcId);
 await tl.vtcs.roles(vtcId);
@@ -115,10 +177,15 @@ await tl.vtcs.gallery(vtcId);
 await tl.vtcs.tier(vtcId);
 await tl.vtcs.liveEvents(vtcId);
 await tl.vtcs.upcomingEvents(vtcId);
-await tl.vtcs.batch([1, 2, 3]);
+
+for await (const members of tl.vtcs.iterateMembers("my-vtc", { limit: 50 })) {
+  for (const m of members) console.log(m.name, m.steamId);
+}
+
+const everyVtc = await tl.vtcs.listAll({ maxPages: 10 });
 ```
 
-### Events, users, news, bans
+### Events, news, bans, programs, game
 
 ```ts
 await tl.events.list();
@@ -126,23 +193,14 @@ await tl.events.get(eventId);
 await tl.events.attendees(eventId);
 await tl.events.slots(eventId);
 
-await tl.users.search({ q: "query" });
-await tl.users.get("handle-or-id");
-await tl.users.batch(["id1", "id2"]);
-await tl.users.bans(userId);
-await tl.users.events(userId);
-
 await tl.news.list();
 await tl.news.get(newsId);
 
-await tl.bans.list();
+await tl.bans.list({ page: 1, pageSize: 25, q: "cheat" });
 await tl.bans.get(banId);
-```
+for await (const page of tl.bans.iterate({ pageSize: 50 })) { /* … */ }
 
-### Programs and game
-
-```ts
-await tl.programs.badge("slug");
+await tl.programs.badge("bug-hunter");
 await tl.programs.recognition();
 await tl.game.servers();
 ```
@@ -152,75 +210,134 @@ await tl.game.servers();
 ```ts
 await tl.get("/version");
 await tl.request("GET", "/vtcs", { query: { limit: 5 } });
+await tl.post("/path", { body: { … } }); // if a future write route is documented
 ```
 
-## Errors and rate limits
+## Errors and retries
 
-Non-success HTTP responses throw `TrucklineError`:
+Failed HTTP responses throw `TrucklineError`:
 
-| Field | Description |
-|-------|-------------|
-| `status` | HTTP status code (`0` for network or timeout) |
-| `code` | API error code when provided |
-| `requestId` | Id for debugging and support |
+| Field / flag | Meaning |
+|--------------|---------|
+| `status` | HTTP status (`0` for network / timeout / abort) |
+| `code` | API or client code (`NOT_FOUND`, `TIMEOUT`, `ABORTED`, …) |
+| `requestId` | Correlation id for support |
 | `retryAfter` | Seconds from `Retry-After` when present |
-| `details` | Optional extra data from the API |
+| `details` | Extra API payload |
+| `isRateLimited` / `isNotFound` / `isUnauthorized` / `isForbidden` | Helpers |
+| `isTimeout` / `isNetworkError` / `isServerError` / `isValidationError` | Helpers |
 
-Convenience flags: `isRateLimited`, `isNotFound`, `isUnauthorized`, `isForbidden`.
+Default retries: up to `maxRetries` (default `1`) on **429** and **5xx**, with jitter. Set `maxRetries: 0` to disable. Network failures also retry when `maxRetries > 0`.
 
-On `429`, the client waits for `Retry-After` (or 1 second) and retries up to `maxRetries` times (default `1`). Disable with `maxRetries: 0`.
+Platform limit tables: [Rate limits](/guides/developers/public-api/#rate-limits).
 
-For limit tables and tiers, see [Rate limits](/guides/developers/public-api/#rate-limits).
+## OAuth
 
-## Webhook verification
-
-In Node.js you can verify deliveries without hand-rolling HMAC:
+Use OAuth when you need data **as a signed-in user** (not with an API key alone). Full product flow: [OAuth Apps](/guides/developers/oauth-apps/).
 
 ```ts
-import { verifyWebhookSignature } from "@trucklinemp/sdk";
+import { TrucklineOAuth, generatePkce } from "@trucklinemp/sdk/oauth";
 
-const valid = verifyWebhookSignature(
-  rawBody,
-  request.headers.get("x-trucklinemp-signature"),
-  process.env.WEBHOOK_SECRET!,
-);
+const oauth = new TrucklineOAuth({
+  clientId: process.env.CLIENT_ID!,
+  clientSecret: process.env.CLIENT_SECRET, // omit for public + PKCE clients
+  redirectUri: "https://myapp.com/callback",
+  // siteUrl: "https://trucklinemp.com",
+});
+
+const pkce = generatePkce();
+const url = oauth.getAuthorizeUrl({
+  scope: ["profile", "vtc:read", "presence:read"],
+  state: "csrf-token",
+  codeChallenge: pkce.codeChallenge,
+});
+
+// After redirect:
+const tokens = await oauth.exchangeCode(code, {
+  codeVerifier: pkce.codeVerifier,
+});
+const me = await oauth.userinfo(tokens.access_token);
+console.log(me.sub, me.steam_id, me.handle);
+
+const refreshed = await oauth.refresh(tokens.refresh_token!);
+await oauth.revoke(tokens.access_token, "access_token");
 ```
 
-Pass the **raw** request body string or buffer. Do not re-serialize JSON before verifying.
+Redirect URI rules (localhost / private LAN / https): [OAuth Apps — redirect URIs](/guides/developers/oauth-apps/#redirect-uri-rules).
 
-Delivery format, headers, retries, and events: [Webhooks](/guides/developers/webhooks/).
+`userinfo` with `profile` includes `steam_id` when linked.
 
-## Relationship to the console and OpenAPI
+## Webhooks (Node.js)
 
-| Tool | Role |
-|------|------|
-| [Developer Console](https://trucklinemp.com/developer) | Keys, projects, playground, analytics |
-| [OpenAPI / ReDoc / Swagger](https://trucklinemp.com/developers) | Full endpoint and schema reference |
-| `@trucklinemp/sdk` | Typed client for common resources |
+Deliveries are signed with HMAC-SHA256 over the **raw body**:
 
-Recommended flow for new integrators:
+```
+X-TrucklineMP-Signature: sha256=<hex>
+X-TrucklineMP-Event: user.banned
+X-TrucklineMP-Delivery: <id>
+```
 
-1. Read [Platform Overview](/guides/developers/overview/).
-2. Create a project and key in the console.
-3. Install the SDK or use the playground.
-4. Use OpenAPI when you need exact response fields.
+```ts
+import {
+  createWebhookHandler,
+  verifyWebhookSignature,
+  WEBHOOK_SIGNATURE_HEADER,
+} from "@trucklinemp/sdk/webhooks";
+
+const handle = createWebhookHandler({
+  secret: process.env.WEBHOOK_SECRET!,
+  onEvent: async (event, meta) => {
+    console.log(meta.type, meta.deliveryId, event);
+  },
+});
+
+// Express: use express.raw() so body is not re-parsed first
+app.post("/hooks/truckline", express.raw({ type: "*/*" }), async (req, res) => {
+  const result = await handle({ rawBody: req.body, headers: req.headers });
+  res.status(result.ok ? 200 : 401).json(result);
+});
+```
+
+Low-level:
+
+```ts
+verifyWebhookSignature(rawBody, req.headers[WEBHOOK_SIGNATURE_HEADER], secret);
+```
+
+Event catalog and retries: [Webhooks](/guides/developers/webhooks/).
+
+## Examples
+
+In the SDK repository (after `npm run build`):
+
+| File | Purpose |
+|------|---------|
+| `examples/basic.mjs` | Version + user search |
+| `examples/oauth-pkce.mjs` | Print authorize URL + verifier |
+| `examples/webhook-express.mjs` | Minimal Express receiver |
 
 ## Versioning
 
-The package follows semantic versioning for the **client API** (method names, option shapes, error class). Server response fields can evolve independently; prefer defensive parsing for optional fields.
-
-Breaking SDK changes ship as major versions. Check the GitHub repository releases for notes.
+- **SDK** methods, options, and error class follow semver (`Truckline.VERSION` / package version).
+- **Server** JSON fields can evolve; treat new optional fields as optional.
+- Breaking client changes ship as major versions. See the package [CHANGELOG](https://github.com/trucklinemp/sdk/blob/main/CHANGELOG.md).
 
 ## Privacy
 
-API calls made with your key are subject to the same logging and rate limiting as direct HTTP traffic. See the [Privacy Policy](https://id.trucklinemp.com/legal/privacy) and the telemetry notes in the [Public API](/guides/developers/public-api/) guide.
+API traffic with your key is subject to the same logging and rate limiting as raw HTTP. See the [Privacy Policy](https://id.trucklinemp.com/legal/privacy) and [Public API](/guides/developers/public-api/) telemetry notes.
+
+## Contributing
+
+Package layout, PRs, and adding methods: [Contributing to the TypeScript SDK](/guides/developers/sdk-contributing/).
 
 ## Related guides
 
 | Guide | Topics |
 |-------|--------|
-| [Platform Overview](/guides/developers/overview/) | Enable developer mode, choose integration type |
+| [Platform Overview](/guides/developers/overview/) | Developer Mode, integration types |
 | [Public API](/guides/developers/public-api/) | Auth, base URLs, rate limits, endpoint map |
+| [OAuth Apps](/guides/developers/oauth-apps/) | Authorize, tokens, scopes, redirect URIs |
 | [Webhooks](/guides/developers/webhooks/) | Events, signatures, retries |
-| [Developer Console](/guides/developers/console/) | Projects, keys, quotas, playground |
-| [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/) | Rotate keys after exposure |
+| [Developer Console](/guides/developers/console/) | Projects, keys, playground |
+| [Contributing to the SDK](/guides/developers/sdk-contributing/) | Local setup and PRs |
+| [Leaked API Keys & Secrets](/guides/developers/leaked-secrets/) | Rotation after exposure |
