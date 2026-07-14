@@ -1,0 +1,193 @@
+---
+title: Вклад в SDK
+description: Как принять участие в разработке @trucklinemp/sdk — локальная настройка, структура пакета, добавление эндпоинтов, стандарты PR и релизы.
+version: 1.1.0
+lastUpdated: 2026-07-14
+---
+
+# Участие в разработке TypeScript SDK
+
+Спасибо, что помогаете улучшать `@trucklinemp/sdk`, официальный набор инструментов TypeScript и JavaScript для [Публичного API](/ru/guides/developers/public-api/) TrucklineMP, OAuth и вебхуков.
+
+Это руководство предназначено для тех, кто хочет изменить сам **пакет SDK** (новые методы, исправления ошибок, типы, документация в репозитории). Если вам нужно только **использовать** SDK в приложении, вместо этого ознакомьтесь с разделом [TypeScript SDK](/ru/guides/developers/sdk/).
+
+| | |
+|---|---|
+| Пакет | `@trucklinemp/sdk` |
+| Исходный код | [github.com/trucklinemp/sdk](https://github.com/trucklinemp/sdk) |
+| npm | [npmjs.com/package/@trucklinemp/sdk](https://www.npmjs.com/package/@trucklinemp/sdk) |
+| Лицензия | MIT |
+
+## Перед началом работы
+
+1. Откройте [issue](https://github.com/trucklinemp/sdk/issues) для крупных изменений, чтобы мейнтейнеры могли согласовать архитектуру.
+2. Проверьте [спецификацию OpenAPI](https://trucklinemp.com/api/v1/openapi.json) и [руководство по публичному API](/ru/guides/developers/public-api/), чтобы узнать реальный HTTP-контракт. SDK — это тонкий клиент, он должен отражать публичные маршруты, а не выдумывать приватные.
+3. Отдавайте предпочтение небольшим, сфокусированным pull request-ам вместо масштабных переписываний кода.
+
+## Требования
+
+- **Node.js 18+** (клиент полагается на глобальный `fetch`)
+- npm (поставляется вместе с Node)
+- Аккаунт на GitHub и форк [trucklinemp/sdk](https://github.com/trucklinemp/sdk)
+
+Необязательно для ручных проверок интеграции:
+
+- API-ключ из [Консоли разработчика](https://trucklinemp.com/developer) TrucklineMP
+- Локальный публичный API по адресу `http://localhost:3000/api/v1`, если вы запускаете веб-приложение локально
+
+## Клонирование и установка
+
+```bash
+git clone https://github.com/YOUR_USER/sdk.git
+cd sdk
+npm install
+```
+
+Если вы работаете из структуры монорепозитория Truckline, пакет находится в папке `sdk/` с теми же скриптами.
+
+## Скрипты
+
+| Команда | Назначение |
+|---------|---------|
+| `npm run build` | Сборка с помощью tsup → `dist/` (точки входа main + oauth + webhooks) |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Юнит-тесты Vitest |
+| `npm run prepublishOnly` | typecheck + test + build (для мейнтейнеров) |
+
+Всегда запускайте их перед открытием PR:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+```
+
+## Структура пакета
+
+```
+sdk/
+├── src/
+│   ├── index.ts           # Основные экспорты
+│   ├── oauth-entry.ts     # @trucklinemp/sdk/oauth
+│   ├── webhooks-entry.ts  # @trucklinemp/sdk/webhooks
+│   ├── client.ts          # Класс Truckline
+│   ├── http.ts            # fetch, повторные попытки, хуки
+│   ├── resources.ts       # vtcs, users, events, …
+│   ├── models.ts          # Типы публичных ответов
+│   ├── oauth.ts           # TrucklineOAuth + PKCE
+│   ├── webhooks.ts        # HMAC + обработчики (Node crypto)
+│   ├── pagination.ts
+│   ├── batch.ts
+│   ├── errors.ts
+│   ├── types.ts
+│   └── version.ts
+├── tests/
+├── examples/
+├── dist/
+├── package.json
+└── …
+```
+
+### Правила проектирования
+
+- **Тонкие обертки** над HTTP-путями. Отдавайте предпочтение `this.http.get("/users/…")` вместо тяжелого маппинга.
+- **Кодируйте сегменты пути** с помощью `encodeURIComponent`.
+- **Передавайте объекты запроса** через `withOpts`, чтобы `RequestOptions` оставались единообразными.
+- **Типы находятся в `models.ts`** — поддерживайте их в соответствии с публичным API и OpenAPI.
+- **Криптография вебхуков остается в `webhooks.ts`** (только для Node). Отдавайте предпочтение `@trucklinemp/sdk/webhooks` для серверных обработчиков.
+- **OAuth находится в `oauth.ts`** и экспортируется по пути `/oauth`.
+- Критические изменения в названиях методов и параметрах следуют семантическому версионированию; необязательные поля ответа могут добавляться без мажорного обновления.
+
+## Добавление метода публичного API
+
+Пример: в API добавляется `GET /users/steam/{steamId}`.
+
+1. Подтвердите путь и параметры в OpenAPI или публичном роутере веб-приложения.
+2. Добавьте метод в соответствующий ресурс в `src/resources.ts`:
+
+```ts
+// UsersResource
+getBySteam(steamId: string, options?: RequestOptions) {
+  return this.http.get(
+    `/users/steam/${encodeURIComponent(steamId)}`,
+    options,
+  );
+}
+```
+
+3. Если вы вводите **новый класс ресурса**, создайте его в классе `Truckline` в файле `src/client.ts` и экспортируйте любые новые типы из `src/index.ts` только в том случае, если они нужны вызывающему коду.
+4. Обновите страницу пользовательской документации ([TypeScript SDK](/ru/guides/developers/sdk/)), если изменение затрагивает пользователей.
+5. Выполните `npm run build && npm run typecheck`.
+
+### Запасной выход
+
+Если маршрут используется редко или все еще меняется, вызывающий код может использовать:
+
+```ts
+await tl.get("/path");
+await tl.request("GET", "/path", { query: { … } });
+```
+
+Отдавайте предпочтение именованному методу, как только маршрут станет стабильным и часто используемым.
+
+## Локальное тестирование с API
+
+```ts
+import { Truckline } from "trucklinemp-sdk"; // или импортируйте из src/index.ts вашего локального репозитория
+
+const tl = new Truckline({
+  apiKey: process.env.TRUCKLINE_API_KEY,
+  // baseUrl: "http://localhost:3000/api/v1",
+});
+
+console.log(await tl.meta.version());
+```
+
+**Не** коммитьте API-ключи. Используйте только переменные окружения.
+
+## Pull request-ы
+
+1. Сделайте форк и создайте ветку от `main` или `master` (в соответствии с веткой по умолчанию в репозитории).
+2. Ограничьте изменения одной задачей.
+3. Опишите, **что** изменилось и **почему**, и прикрепите ссылку на любую задачу по API или документации.
+4. Убедитесь, что `npm run build` и `npm run typecheck` проходят успешно.
+5. Обновите README или документацию, если поведение изменилось для пользователей.
+
+### Стиль коммитов (рекомендуемый)
+
+```text
+feat(sdk): add users.getBySteam
+fix(sdk): encode path ids on news.get
+docs(sdk): document webhook raw-body requirement
+chore(sdk): bump version to 0.1.2
+```
+
+## Релизы (для мейнтейнеров)
+
+Публикация описана в файле `PUBLISH.md` репозитория. Краткое содержание:
+
+1. Обновите `version` в `package.json` (`npm version patch|minor|major`).
+2. Отправьте изменения в ветку по умолчанию (или запустите рабочий процесс публикации).
+3. CI собирает, проверяет типы и публикует в **публичный** реестр npm, когда версия новая.
+
+Контрибьюторам не нужны права на публикацию в npm. Мейнтейнеры выпускают релизы после проверки.
+
+## Чего мы не ждём
+
+- Обертки вокруг **приватных**, административных или доступных только по cookie веб-эндпоинтов
+- Добавление несвязанных утилит, которые раздувают пакет
+- Жесткие сгенерированные типы для каждого поля OpenAPI в каждом релизе (дополнительные инструменты допускаются, если они предварительно обсуждались)
+- Секреты, ключи или персональные токены в репозитории
+
+## Связанные ссылки
+
+| Ресурс | Ссылка |
+|----------|------|
+| Использование SDK | [TypeScript SDK](/ru/guides/developers/sdk/) |
+| Публичный API | [Публичный API](/ru/guides/developers/public-api/) |
+| Вебхуки | [Вебхуки](/ru/guides/developers/webhooks/) |
+| Консоль разработчика | [trucklinemp.com/developer](https://trucklinemp.com/developer) |
+| OpenAPI | [openapi.json](https://trucklinemp.com/api/v1/openapi.json) |
+| Перевод документации | [Перевод документации](/ru/guides/contributing/) |
+
+Вопросы об API платформы (а не только о пакете SDK) приветствуются через службу поддержки или каналы для разработчиков, указанные на trucklinemp.com.

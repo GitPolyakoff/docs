@@ -421,6 +421,9 @@ export default defineConfig({
             {
               slug: "guides/developers/leaked-secrets",
               label: "Leaked API Keys & Secrets",
+              translations: {
+                ru: "Утечка API-ключей и секретов",
+              },
             },
           ],
         },
@@ -450,6 +453,9 @@ export default defineConfig({
             {
               slug: "guides/translation-status",
               label: "Translation Status",
+              translations: {
+                ru: "Статус перевода",
+              },
             },
           ],
         },
